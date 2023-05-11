@@ -16,11 +16,27 @@ const userInterface = readline.createInterface({
   output: process.stdout,
 });
 
+readline.emitKeypressEvents(process.stdin);
+if (process.stdin.isTTY)
+  process.stdin.setRawMode(true);
+
+let previousKeyName = "";
+let inputBuffer = "";
+
+process.stdin.on('keypress', (ch, key) => {
+  previousKeyName = key.name;
+
+  if(key && key.name === 'return') {
+    inputBuffer += "\n";
+  }
+})
+
 let isSystemMessageSet = false;
 let gptModel = "gpt-3.5-turbo";
 let systemMsg = "";
 
-console.log("Please enter a system message");
+console.log("Welcome!");
+console.log("Please enter a system message for the AI: ");
 userInterface.prompt();
 
 userInterface.on("line", async (input) => {
@@ -30,17 +46,28 @@ userInterface.on("line", async (input) => {
     isSystemMessageSet = true;
 
     console.log("Starting chat...");
-    console.log("Please enter a message to AI");
-  } else {
-    const response = await openAi.createChatCompletion({
-      model: gptModel,
-      messages: [
-        { role: "system", content: systemMsg },
-        { role: "user", content: input },
-      ],
-    });
-
-    console.log(response.data.choices[0].message.content);
+    console.log("Please enter a message to AI:");
     userInterface.prompt();
+  } else {
+    if(previousKeyName === "return") {
+      // send message to AI
+      console.log("Waiting for AI response...\n")
+      const response = await openAi.createChatCompletion({
+        model: gptModel,
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: inputBuffer },
+        ],
+      });
+  
+      console.log(`${response.data.choices[0].message.content}\n`);
+      userInterface.prompt();
+    } else {
+      // add to buffer
+      inputBuffer += input;
+    }
   }
+}).on("close", () => {
+  console.log("Exiting...Goodbye...");
+  process.exit(0);
 });
