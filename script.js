@@ -32,7 +32,8 @@ process.stdin.on('keypress', (ch, key) => {
 })
 
 let isSystemMessageSet = false;
-let gptModel = "gpt-3.5-turbo";
+let gptModel = "gpt-4";
+// let gptModel = "gpt-3.5-turbo";
 let systemMsg = "";
 
 console.log("Welcome!");
